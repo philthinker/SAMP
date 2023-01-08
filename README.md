@@ -8,7 +8,7 @@ Haopeng Hu
 
 2022.08.11
 
-![robot](https://github.com/philthinker/SAMP/panda.jpg)
+![robot](https://github.com/philthinker/SAMP/blob/main/panda.jpg)
 
 ## Greengrape
 
