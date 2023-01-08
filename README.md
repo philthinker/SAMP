@@ -29,7 +29,13 @@ Runing these codes may take seconds.
 
 The C++ codes for controlling the robot.
 
+- The "libfranka 0.8.0" library is needed.
+- There is an demo file "Toys_Grape6.cpp".
+- Build it with CMake.
 
 ## Data
 
 Demo data.
+
+- "main_C.mat": The demo data for the MATLAB demo.
+- "main_C.csv": The demo data for the C++ demo.

@@ -110,6 +110,31 @@ classdef Greengrape5S1
                 obj.params_thdDClustering = Value;
             end
         end
+        
+        function [obj] =regulateModel(obj)
+            %regulateModel Regulate the final pose of the learned model.
+            priorP = obj.SAMP.p(:,end);
+            priorQ = obj.SAMP.q(:,end);
+            priorR = quat2rotm(priorQ');
+            priorT = eye(4);
+            priorT(1:3,1:3) = priorR;
+            priorT(1:3,4) = priorP;
+            invPriorT = fastInvSE3(priorT);
+            % Pre-Assembly
+            tmp_p0 = invPriorT * [obj.PreAssembly.p0;1];
+             obj.PreAssembly.p0 = tmp_p0(1:3);
+             obj.PreAssembly.q = quatProduct(quatConjugate(priorQ),obj.PreAssembly.q);
+             obj.PreAssembly.d = priorR' * obj.PreAssembly.d;
+             tmp_p = invPriorT * [obj.PreAssembly.p;1]; 
+             obj.PreAssembly.p = tmp_p(1:3);
+            % SAMP
+            for i = 1:obj.SAMP.K
+                tmp_p = invPriorT * [obj.SAMP.p(:,i);1];
+                obj.SAMP.p(:,i) = tmp_p(1:3);
+                obj.SAMP.q(:,i) = quatProduct(quatConjugate(priorQ), obj.SAMP.q(:,i));
+                obj.SAMP.d(:,i) = priorR' * obj.SAMP.d(:,i);
+            end
+        end
     end
     
     methods (Access = public)
@@ -118,7 +143,7 @@ classdef Greengrape5S1
         [appTraj, P, R] = genAppTraj(obj, p0, q0, dt, psFlag, beta_p, beta_v, beta_q);
         [assTraj, DemosA3DTW, model] = genAssTraj(obj, DemosA3, N, WinDTW, K, h);
         [assTraj, DemosA3PDTW, DemosA3Eta] = genAssTraj_dualPolicy(obj, DemosA3, N, WinDTW, Ks, hs);
-        [ModelData] = writeCSV(obj, FileName);
+        [ModelData] = writeCSV(obj, FileName, reguFlag);
         [results] = evaluate(obj, ExpData, NOTE);
         %% Figures
         [] = figureA12(obj, Demos, appTrajs);

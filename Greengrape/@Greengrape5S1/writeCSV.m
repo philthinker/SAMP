@@ -1,7 +1,8 @@
-function [ModelData] = writeCSV(obj, FileName)
+function [ModelData] = writeCSV(obj, FileName, reguFlag)
 %writeCSV Write the model into a csv file.
 %   obj.
 %   FileName: String, the name of file.
+%   reguFlag: Boolean, ture for regulate the final pose to the origin. (Default: false)
 %   -------------------------------------------------
 %   ModelData: 2+K x 11, the output data
 %   @Greengrape5S1
@@ -13,18 +14,38 @@ function [ModelData] = writeCSV(obj, FileName)
 %   - ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if narign < 3
+    reguFlag = false;
+end
+
 ModelData = zeros(2+obj.SAMP.K, 11);
+
+if reguFlag
+    % Regulate the final pose to the origin
+    priorP = obj.SAMP.p(:,end);
+    priorQ = obj.SAMP.q(:,end);
+    priorR = quat2rotm(priorQ');
+else
+    priorP = zeros(3,1);
+    priorQ = [1 0 0 0]';
+    priorR = eye(3);
+end
+priorT = eye(4);
+priorT(1:3,1:3) = priorR;
+priorT(1:3,4) = priorP;
+invPriorT = fastInvSE3(priorT);
+
 % Pre-Assembly
-ModelData(1,1:3) = obj.PreAssembly.p0';
-ModelData(1,4:7) = toEigenQuat(obj.PreAssembly.q');
-ModelData(1,8:10) = obj.PreAssembly.d';
-ModelData(2,1:3) = obj.PreAssembly.p';
+ModelData(1,1:3) = SE3TransP(obj.PreAssembly.p0, invPriorT)';
+ModelData(1,4:7) = toEigenQuat(quatInvProduct(priorQ, obj.PreAssembly.q)');
+ModelData(1,8:10) = (priorR' * obj.PreAssembly.d)';
+ModelData(2,1:3) = SE3TransP(obj.PreAssembly.p, invPriorT)';
 % SAMP
 for i = 1:obj.SAMP.K
     ModelData(2+i, 1) = obj.SAMP.mod(i);
-    ModelData(2+i,2:4) = obj.SAMP.p(:,i)';
-    ModelData(2+i,5:8) = toEigenQuat(obj.SAMP.q(:,i)');
-    ModelData(2+i,9:11) = obj.SAMP.d(:,i)';
+    ModelData(2+i,2:4) = SE3TransP(obj.SAMP.p(:,i), invPriorT)';
+    ModelData(2+i,5:8) = toEigenQuat( quatInvProduct(priorQ,obj.SAMP.q(:,i))');
+    ModelData(2+i,9:11) = (priorR' * obj.SAMP.d(:,i))';
 end
 
 writematrix(ModelData,strcat(FileName,'.csv'));
@@ -40,4 +61,28 @@ tmpQ = q;
 tmpQ(:,1:3) = q(:,2:4);
 tmpQ(:,4) = q(:,1);
 q = tmpQ;
+end
+
+function [q] = quatInvProduct(q1, q2)
+%quatInvProduct conj_q1 * q2
+%   q1: 4 x 1, [w x y z]' quat
+%   q2: 4 x 1, [w x y z]' quat
+%   -------------------------------------------------
+%   q: 4 x 1, [w x y z]' quat
+
+q = quatProduct(quatConjugate(q1), q2);
+
+end
+
+function [p] = SE3TransP(p, T)
+%SE3TransP Transform p with the SE(3) matrix T
+%   p: 3 x 1, the p
+%   T: 4 x 4 SE(3), the T
+%   -------------------------------------------------
+%   p: 3 x 1, the tranformed p
+
+p = [p;1];
+p = T * p;
+p = p(1:3);
+
 end

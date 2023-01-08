@@ -3,14 +3,14 @@ function [] = figureA123(obj, Demos, DemosA1, DemosA3, l)
 %   Demos: 1 x M cell of 4 x 4 x N SE(3), the demo data.
 %   DemosA1: 1 x M cell of 13 x N, [p;v;q;w] data. (Optional)
 %   DemosA3: 1 x M cell of 13 x N, [p;v;q;w] data. (Optional)
-%   l: Scalar >0, length of the direction arrow. (Default: 0.05);
+%   l: Scalar >0, length of the direction arrow. (Default: 0.02);
 %   @Greengrape5S1
 
 % arrowMod = 0; % Using quiver3
 arrowMod = 1; % Using  mArrow3SC
 
 if nargin < 5
-    l = 0.05;
+    l = 0.02;
 end
 
 figure;
