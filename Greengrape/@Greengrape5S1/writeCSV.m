@@ -14,7 +14,7 @@ function [ModelData] = writeCSV(obj, FileName, reguFlag)
 %   - ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if narign < 3
+if nargin < 3
     reguFlag = false;
 end
 

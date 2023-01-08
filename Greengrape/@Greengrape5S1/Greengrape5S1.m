@@ -111,15 +111,24 @@ classdef Greengrape5S1
             end
         end
         
-        function [obj] =regulateModel(obj)
+        function [obj] =regulateModel(obj, mapT)
             %regulateModel Regulate the final pose of the learned model.
-            priorP = obj.SAMP.p(:,end);
-            priorQ = obj.SAMP.q(:,end);
-            priorR = quat2rotm(priorQ');
-            priorT = eye(4);
-            priorT(1:3,1:3) = priorR;
-            priorT(1:3,4) = priorP;
-            invPriorT = fastInvSE3(priorT);
+            %   - % You must run obj.regulateModel() once in advance!
+            %   mapT: 4 x 4 SE(3), the environment mapping. (Optional)
+            if nargin < 2 || isempty(mapT)
+                priorP = obj.SAMP.p(:,end);
+                priorQ = obj.SAMP.q(:,end);
+                priorR = quat2rotm(priorQ');
+                priorT = eye(4);
+                priorT(1:3,1:3) = priorR;
+                priorT(1:3,4) = priorP;
+                invPriorT = fastInvSE3(priorT);
+            else
+                % You must run obj.regulateModel() once in advance!
+                invPriorT = mapT;
+                priorR = invPriorT(1:3,1:3);
+                priorQ = quatRegulate(rotm2quat(priorR)');
+            end
             % Pre-Assembly
             tmp_p0 = invPriorT * [obj.PreAssembly.p0;1];
              obj.PreAssembly.p0 = tmp_p0(1:3);
